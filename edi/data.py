@@ -79,5 +79,19 @@ def get_data():
     CL_q = vars_dados.cell(row=6,column=20).value
     Cm_q = vars_dados.cell(row=6,column=21).value
     
-
-get_data()
+def get_data_teste():
+    dados_planilha = {
+        'de_takeoff': -5,
+        'ac_eh': 40,
+        'Sd': 50,
+        'g': 9.81,
+        'rho': 1.225,
+        'm': 15,
+        'x_tdp': 1,
+        'x_tdn': 1,
+        'Iyy': 0.5,
+        'dt': 0,
+        'Sref': 1,
+        'mi': 0.05,
+    }
+    return dados_planilha
