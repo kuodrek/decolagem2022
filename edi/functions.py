@@ -3,17 +3,6 @@ import math
 
 # Descobrir o que é gama, teta e alfa nesse contexto
 
-g = 9.81
-rho = 1.086
-m = 1
-x_tdp = 1
-x_tdn = 1
-W = m*g
-Iyy = 0.3
-dt = 0
-Sref = 1
-mi = 1
-
 def tracao(V, rho, helice_dados):
     T = 1
     return T
@@ -36,6 +25,17 @@ def takeoff(X, U, dados_planilha):
     V = math.sqrt(Vx ** 2 + Vz ** 2)
 
     # Dados avião
+    g=dados_planilha['g']
+    rho=dados_planilha['rho']
+    m=dados_planilha['m']
+    x_tdp=dados_planilha['x_tdp']
+    x_tdn=dados_planilha['x_tdn']
+    Iyy=dados_planilha['Iyy']
+    dt=dados_planilha['dt']
+    Sref=dados_planilha['Sref']
+    mi=dados_planilha['mi']
+    W=m*g
+
     CL_alfa = dados_planilha['CL_alfa']
     CL_de = dados_planilha['CL_de']
     CL_q = dados_planilha['CL_q']
