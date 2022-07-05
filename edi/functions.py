@@ -14,7 +14,7 @@ dt = 0
 Sref = 1
 mi = 1
 
-def tracao(V, rho, n_helice):
+def tracao(V, rho, helice_dados):
     T = 1
     return T
 
@@ -44,7 +44,7 @@ def takeoff(X, U, dados_planilha):
     Cm_de = dados_planilha['Cm_de']
     Cm_q = dados_planilha['Cm_q']
     Cm_0 = dados_planilha['Cm_0']
-    n_helice = dados_planilha['n_helice']
+    helice_dados = dados_planilha['n_helice']
     
     # Coeficientes
     CL = CL_alfa * alfa + CL_de * de + CL_q * q + CL_0
@@ -52,7 +52,7 @@ def takeoff(X, U, dados_planilha):
     Cm_cg = Cm_alfa * alfa + Cm_de * de + Cm_q * q + Cm_0
 
     # Força e momento do motor
-    T = tracao(V, rho, n_helice) * g
+    T = tracao(V, rho, helice_dados) * g
     M_motor = T * dt
 
     # Forças e momentos aerodinâmicos
