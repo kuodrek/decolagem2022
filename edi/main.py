@@ -13,12 +13,9 @@ h = 0.25
 x_acionamento = dados_planilha['x_acionamento']
 
 t = 0
-t_vetor = []
+t_vetor = [t]
 t_max = 20
 while True:
-    t += h
-    t_vetor.append(t)
-
     x_pos = X[3]
     if x_pos > x_acionamento:
         U = [de_takeoff]
@@ -29,4 +26,6 @@ while True:
     K4, _ = takeoff(X, U, dados_planilha)
     X = X+h/6*(K1+2*K2+2*K3+K4)
 
+    t += h
+    t_vetor.append(t)
     if t > t_max: break
