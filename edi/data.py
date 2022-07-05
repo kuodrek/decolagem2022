@@ -93,5 +93,23 @@ def get_data_teste():
         'dt': 0,
         'Sref': 1,
         'mi': 0.05,
+        'CL_alfa': 0.09,
+        'CL_de': 0.05,
+        'CL_q': 0.09,
+        'CL_0': 0.9,
+        'Cm_alfa': -0.09,
+        'Cm_de': -0.05,
+        'Cm_q': -0.3,
+        'Cm_0': 0.05,
     }
     return dados_planilha
+
+    # CL_alfa = dados_planilha['CL_alfa']
+    # CL_de = dados_planilha['CL_de']
+    # CL_q = dados_planilha['CL_q']
+    # CL_0 = dados_planilha['CL_0']
+    # Cm_alfa = dados_planilha['Cm_alfa']
+    # Cm_de = dados_planilha['Cm_de']
+    # Cm_q = dados_planilha['Cm_q']
+    # Cm_0 = dados_planilha['Cm_0']
+    # helice_dados = dados_planilha['n_helice']
