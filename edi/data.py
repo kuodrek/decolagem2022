@@ -24,23 +24,60 @@ def get_data():
     Cm_ac_w = vars_dados.cell(row=3,column=11).value
     MAC_w = vars_dados.cell(row=3,column=12).value
     ## Dados para polyfit das curvas de arrasto parasita e induzido
-    v1 = vars_dados.cell(row=5,column=5).value
-    v2 = vars_dados.cell(row=6,column=5).value
+    v1_w = vars_dados.cell(row=5,column=5).value
+    v2_w = vars_dados.cell(row=6,column=5).value
     CDp_w1 = vars_dados.cell(row=5,column=6).value
     CDp_w2 = vars_dados.cell(row=6,column=6).value
 
-    a_1 = vars_dados.cell(row=5,column=7).value
-    a_2 = vars_dados.cell(row=6,column=7).value
-    a_3 = vars_dados.cell(row=7,column=7).value
-    a_4 = vars_dados.cell(row=8,column=7).value
-    a_5 = vars_dados.cell(row=9,column=7).value
-    a_6 = vars_dados.cell(row=10,column=7).value
+    a_1_w = vars_dados.cell(row=5,column=7).value
+    a_2_w = vars_dados.cell(row=6,column=7).value
+    a_3_w = vars_dados.cell(row=7,column=7).value
+    a_4_w = vars_dados.cell(row=8,column=7).value
+    a_5_w = vars_dados.cell(row=9,column=7).value
+    a_6_w = vars_dados.cell(row=10,column=7).value
 
-    CDi_1 = vars_dados.cell(row=5,column=8).value
-    CDi_2 = vars_dados.cell(row=6,column=8).value
-    CDi_3 = vars_dados.cell(row=7,column=8).value
-    CDi_4 = vars_dados.cell(row=8,column=8).value
-    CDi_5 = vars_dados.cell(row=9,column=8).value
-    CDi_6 = vars_dados.cell(row=10,column=8).value
+    CDiw_1 = vars_dados.cell(row=5,column=8).value
+    CDiw_2 = vars_dados.cell(row=6,column=8).value
+    CDiw_3 = vars_dados.cell(row=7,column=8).value
+    CDiw_4 = vars_dados.cell(row=8,column=8).value
+    CDiw_5 = vars_dados.cell(row=9,column=8).value
+    CDiw_6 = vars_dados.cell(row=10,column=8).value
+
+    # Variáveis do estabilizador horizontal (EH)
+    Sh = vars_dados.cell(row=3,column=13).value
+    ih = vars_dados.cell(row=3,column=14).value
+    CL_0_h = vars_dados.cell(row=3,column=15).value
+    CL_alfa_h = vars_dados.cell(row=3,column=16).value
+    CL_max_h = vars_dados.cell(row=3,column=17).value
+    de_decolagem = vars_dados.cell(row=3,column=18).value
+    taue = vars_dados.cell(row=3,column=19).value
+    epsilon_0 = vars_dados.cell(row=3,column=20).value
+    depsilon_dalfa  = vars_dados.cell(row=3,column=21).value
+
+    ## Dados para polyfit das curvas de arrasto parasita e induzido
+    v1_h = vars_dados.cell(row=5,column=13).value
+    v2_h = vars_dados.cell(row=6,column=13).value
+    CDp_h1 = vars_dados.cell(row=5,column=14).value
+    CDp_h2 = vars_dados.cell(row=6,column=14).value
+
+    a_1_h = vars_dados.cell(row=5,column=15).value
+    a_2_h = vars_dados.cell(row=6,column=15).value
+    a_3_h = vars_dados.cell(row=7,column=15).value
+    a_4_h = vars_dados.cell(row=8,column=15).value
+    a_5_h = vars_dados.cell(row=9,column=15).value
+    a_6_h = vars_dados.cell(row=10,column=15).value
+
+    CDih_1 = vars_dados.cell(row=5,column=16).value
+    CDih_2 = vars_dados.cell(row=6,column=16).value
+    CDih_3 = vars_dados.cell(row=7,column=16).value
+    CDih_4 = vars_dados.cell(row=8,column=16).value
+    CDih_5 = vars_dados.cell(row=9,column=16).value
+    CDih_6 = vars_dados.cell(row=10,column=16).value
+
+    CL_de = vars_dados.cell(row=6,column=18).value
+    Cm_de = vars_dados.cell(row=6,column=19).value
+    CL_q = vars_dados.cell(row=6,column=20).value
+    Cm_q = vars_dados.cell(row=6,column=21).value
+    
 
 get_data()
