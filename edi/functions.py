@@ -48,7 +48,7 @@ def takeoff(X, U, dados_planilha):
     
     # Coeficientes
     CL = CL_alfa * alfa + CL_de * de + CL_q * q + CL_0
-    CD = 1
+    CD = CD_1 * alfa ** 2 + CD_2 * alfa + CD_3
     Cm_cg = Cm_alfa * alfa + Cm_de * de + Cm_q * q + Cm_0
 
     # Força e momento do motor
