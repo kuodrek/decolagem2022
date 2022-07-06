@@ -3,8 +3,15 @@ import math
 
 # Descobrir o que é gama, teta e alfa nesse contexto
 
+def update_X(X,K1,K2,K3,K4,h):
+    X_temp = np.zeros([len(X)])
+    for i, _ in enumerate(X):
+        X_temp[i]=X[i]+h/6 * (K1[i]+2*K2[i]+2*K3[i]+K4[i])
+    return X_temp
+
 def tracao(V, rho, helice_dados):
-    T = 1
+    rho0 = 1.225
+    T = rho / rho0 * np.polyval(helice_dados,V)
     return T
 
 def takeoff(X, U, dados_planilha):
@@ -21,7 +28,13 @@ def takeoff(X, U, dados_planilha):
 
     de = U[0]
 
-    alfa = teta
+    if Vz == 0: 
+        alfa = teta
+        gama = 0
+    else: 
+        alfa = np.arctan(Vz/Vx)
+        gama = teta - alfa
+
     V = math.sqrt(Vx ** 2 + Vz ** 2)
 
     # Dados avião
@@ -44,11 +57,12 @@ def takeoff(X, U, dados_planilha):
     Cm_de = dados_planilha['Cm_de']
     Cm_q = dados_planilha['Cm_q']
     Cm_0 = dados_planilha['Cm_0']
-    helice_dados = dados_planilha['n_helice']
-    
+    helice_dados = dados_planilha['helice_dados']
+    CD_poly = dados_planilha['CD_poly']
+
     # Coeficientes
     CL = CL_alfa * alfa + CL_de * de + CL_q * q + CL_0
-    CD = CD_1 * alfa ** 2 + CD_2 * alfa + CD_3
+    CD = np.polyval(CD_poly, alfa)
     Cm_cg = Cm_alfa * alfa + Cm_de * de + Cm_q * q + Cm_0
 
     # Força e momento do motor
@@ -87,8 +101,6 @@ def takeoff(X, U, dados_planilha):
     else:
         # Reações dos trens de pouso e nariz = 0 -> Avião voando
         # Referencia: horizon
-        alfa = np.arctan(Vz / Vx) # verificar se usa essa formula nesse caso
-        gama = teta - alfa
         ax = (T*np.cos(teta) - D*np.cos(gama) - L*np.sin(gama))/m
         az = (T*np.sin(teta) + L*np.cos(gama) - W - D*np.sin(gama))/m
         ateta = (M_cg + M_motor)/Iyy

@@ -1,4 +1,5 @@
 import openpyxl as xl
+import numpy as np
 
 def get_data():
     workbook = xl.load_workbook(filename="dadoscompletosMONOPLANO.xlsx", data_only=True)
@@ -80,8 +81,11 @@ def get_data():
     Cm_q = vars_dados.cell(row=6,column=21).value
     
 def get_data_teste():
+    helice_dados =  [-0.003,-0.097, 4.40]
+    CD_poly = [0.01, 0.01, 0.01]
+
     dados_planilha = {
-        'de_takeoff': -5,
+        'de_takeoff': -5 * np.pi/180,
         'ac_eh': 40,
         'Sd': 50,
         'g': 9.81,
@@ -90,26 +94,18 @@ def get_data_teste():
         'x_tdp': 1,
         'x_tdn': 1,
         'Iyy': 0.5,
-        'dt': 0,
+        'dt': 0.05,
         'Sref': 1,
         'mi': 0.05,
-        'CL_alfa': 0.09,
-        'CL_de': 0.05,
-        'CL_q': 0.09,
+        'CL_alfa': 0.09 * 180 / np.pi,
+        'CL_de': 0.05 * 180 / np.pi,
+        'CL_q': 0.09 * 180 / np.pi,
         'CL_0': 0.9,
-        'Cm_alfa': -0.09,
-        'Cm_de': -0.05,
-        'Cm_q': -0.3,
+        'Cm_alfa': -0.09 * 180 / np.pi,
+        'Cm_de': -0.05 * 180 / np.pi,
+        'Cm_q': -0.3 * 180 / np.pi,
         'Cm_0': 0.05,
+        'CD_poly': CD_poly,
+        'helice_dados': helice_dados
     }
     return dados_planilha
-
-    # CL_alfa = dados_planilha['CL_alfa']
-    # CL_de = dados_planilha['CL_de']
-    # CL_q = dados_planilha['CL_q']
-    # CL_0 = dados_planilha['CL_0']
-    # Cm_alfa = dados_planilha['Cm_alfa']
-    # Cm_de = dados_planilha['Cm_de']
-    # Cm_q = dados_planilha['Cm_q']
-    # Cm_0 = dados_planilha['Cm_0']
-    # helice_dados = dados_planilha['n_helice']
