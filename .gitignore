@@ -1,6 +1,6 @@
 /venv/
 /edi/__pycache__/
-*.xlsx
+
 *.pyc
 .asv
 /.vscode/

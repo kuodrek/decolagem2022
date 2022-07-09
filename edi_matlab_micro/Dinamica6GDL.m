@@ -1,4 +1,4 @@
-function [Xp,CF,reacoes,Fa] = Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao)
+function [Xp,CF,reacoes,Fa, momentos] = Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao)
 %% Dados do avião
 geral = AircraftData{2,1};
 controle = AircraftData{1,1};
@@ -10,6 +10,7 @@ Iyy = Ib(2,2);
 x_tdp = geral(1,13);
 x_tdn = geral(1,14);
 mi = geral(1,15);
+Sd = geral(1,16);
 %% Vetor de estados (Só é utilizado u, w, q, teta)
 u = X(1);
 v = X(2);
@@ -17,6 +18,7 @@ w = X(3);
 % p = X(4);
 q = X(5);
 % r = X(6);
+x_pos = X(7);
 phi = X(10);
 teta = X(11);
 psi = X(12);
@@ -87,18 +89,18 @@ Za = ForcasCorpo(3);
 %% Reação dos trens de pouso e nariz
 R_n = W - T*sin(teta) - L;
 
-if R_n < 0 || strcmp(estado_do_aviao, 'subida') == true
+if R_n < 0 || strcmp(estado_do_aviao, 'subida') == true || x_pos > Sd
     R_n = 0;
 end
 
 R_tdn = (R_n - 1 / x_tdp * (Ma - Mt)) / (1 + x_tdn/x_tdp);
-if R_tdn < 0 || strcmp(estado_do_aviao, 'rotacao') == true || strcmp(estado_do_aviao, 'subida') == true
+if R_tdn < 0 || strcmp(estado_do_aviao, 'rotacao') == true || strcmp(estado_do_aviao, 'subida') == true || x_pos > Sd
     R_tdn = 0;
 end
 
 % R_tdp = 1 /(x_tdp) * (Ma - Mt + R_tdn*x_tdn);
 R_tdp = R_n - R_tdn;
-if R_tdp < 0 || strcmp(estado_do_aviao, 'subida') == true
+if R_tdp < 0 || strcmp(estado_do_aviao, 'subida') == true || x_pos > Sd
     R_tdp = 0;
 end
 P_cg = -R_tdp*x_tdp + R_tdn*x_tdn;
@@ -121,7 +123,7 @@ if R_n > 0
         np = u;
         hp = 0;
     end
-else
+elseif R_n == 0 || x_pos > Sd
     % Reações dos trens de pouso e nariz = 0 -> Avião voando
     % Referencia: horizon
     
@@ -133,7 +135,6 @@ else
     if alfa < -alfa_max
         alfa = -alfa_max;
     end
-    
     up = (T* cos(teta) - D* cos(gama) - L* sin(gama))/m;
     wp = (T* sin(teta) + L* cos(gama) - W - D* sin(gama))/m;
     qp = (Ma - Mt)/Iyy;
@@ -141,21 +142,13 @@ else
     hp = w;
     tetap = q;
 end
-
-%% Acelerações da dinamica normal
-% up = 1/m*(Xa+Xt) - w*q -g*sin(teta);
-% wp = 1/m*(Za+Zt) + u*q +g*cos(teta);
-% qp = 1/Iy*(Ma-Mt);
-% np = u*cos(teta)+w*sin(teta);
-% hp = u*sin(teta)-w*cos(teta);
-% tetap = q;
-
 %% Vetor de saída
 if qp < 0
 %     fprintf('Ma: %g\n', Ma)
 %    fprintf('Mt: %g\n', Mt)
     aaaa = 1;
 end
+momentos = [Ma Mt];
 reacoes = [R_n R_tdp R_tdn];
 Xp = [up 0 wp 0 qp 0 np 0 hp 0 tetap 0];
 end

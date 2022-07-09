@@ -16,6 +16,9 @@ end
 disp('Dados adquiridos!')
 %% Vetores iniciais X_0 e U_0
 X_0 = zeros(1,12);
+geral = AircraftData{2,1};
+z_mesa = geral(1,17) ; % Altura da mesa[m]
+X_0(9) = z_mesa;
 superficies = AircraftData{3,1};
 dtmax = superficies(4,6);
 U_0 = [dtmax 0 0 0];
@@ -32,8 +35,8 @@ estado_do_aviao = 'corrida';
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
-t_final = 10;
-h=20e-4;
+t_final = 5;
+h=20e-3;
 n_pto = (t_final-t_inicial)/h+1;
 vet_t=linspace(t_inicial,t_final,n_pto);   % Vetor dos tempos amostrados
 U_vet=zeros(n_pto,4);
@@ -46,12 +49,11 @@ H = H_0;
 check1 = 0;
 check2 = 0;
 
-Sd = 58;
-ac_eh = 35; 
-de_takeoff = -15 * pi / 180;
+Sd = geral(1,16);
+ac_eh = 3; 
+de_takeoff = -14* pi / 180;
 
-ac_desativacao = 1000;
-
+z_warning = 0.2;
 %% Definição de valores de limite
 qmax = 10 * pi / 180;
 gama_max = 20 * pi / 180;
@@ -71,22 +73,19 @@ for i=1:n_pto
         U(2) = de_takeoff;
     end
     
-    if x_pos > ac_desativacao
-        U(2) = 0;
-    end
-    
     if R_tdn > 0 && R_tdp > 0
         estado_do_aviao = 'corrida';
     elseif R_tdn == 0 && R_tdp > 0
         estado_do_aviao = 'rotacao';
-    elseif R_tdn == 0 && R_tdp == 0
+    elseif (R_tdn == 0 && R_tdp == 0) || x_pos > Sd
         estado_do_aviao = 'subida';
     end
-    vetor_de_estados{i} = {estado_do_aviao};
+    vetor_de_estados{i,1} = {estado_do_aviao};
+    vetor_de_estados{i,2} = t;
 %% Runge-kutta
     U_vet(i,:) = U;
     K1=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
-    [~,CF,reacoes,Fa]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
+    [~,CF,reacoes,Fa,momentos]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
     CF_vetor(i,:) = CF;
     K2=Dinamica6GDL(X+h/2*K1,U,H,AircraftData,estado_do_aviao);
     K3=Dinamica6GDL(X+h/2*K2,U,H,AircraftData,estado_do_aviao);
@@ -99,8 +98,13 @@ for i=1:n_pto
     if X(5) < -qmax
         X(5) = -qmax;
     end
+    if X(11) < 0 && (strcmp(estado_do_aviao, 'corrida') && strcmp(estado_do_aviao, 'rotacao'))
+        X(11) = 0;
+    end
+    %% Vetores de diversas forças e momentos
     L_vetor(i,:) = Fa(3);
-    reacoes_vetor(i,:) = [reacoes x_pos];
+    reacoes_vetor(i,:) = [reacoes x_pos t];
+    Ma_vetor(i) = momentos(1);
     Xp_vetor(i,:) = K1;
 %% Condição de parada
 %     R_n = reacoes(1);
@@ -147,11 +151,16 @@ title('Reacao tdn x t')
 xlim([0 t_final])
 ylim([0 max(reacoes_vetor(:,3))])
 
+z_warning_vetor = ones(size(z,1),size(z,2))*z_warning;
+fprintf("zmin: %g\n", min(z))
 subplot(2,3,4);
+hold on
 plot(x,z);
+plot(x,z_warning_vetor);
 title('Z x X')
-xlim([0 max(x)])
-ylim([0 40])
+xlim([0 30])
+ylim([0 3])
+hold off
 
 subplot(2,3,5);
 teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
@@ -167,27 +176,33 @@ title('q x t')
 xlim([0 t_final])
 ylim([-20 20])
 
-figure(2)
-subplot(2,3,1)
-plot(vet_t,L_vetor);
-title('L x t')
-xlim([0 t_final])
-ylim([0 1.2*max(L_vetor)])
-
-subplot(2,3,2)
-plot(vet_t,CF_vetor(:,3));
-title('CL x t')
-xlim([0 t_final])
-ylim([-3 3])
-
-subplot(2,3,3)
-plot(vet_t,V(:,1));
-title('V x t')
-xlim([0 t_final])
-ylim([0 1.2*max(V)])
-
-subplot(2,3,4)
-plot(vet_t,alfa);
-title('alfa x t')
-xlim([0 t_final])
-ylim([-30 30])
+% figure(2)
+% subplot(2,3,1)
+% plot(vet_t,L_vetor);
+% title('L x t')
+% xlim([0 t_final])
+% ylim([0 1.2*max(L_vetor)])
+% 
+% subplot(2,3,2)
+% plot(vet_t,CF_vetor(:,3));
+% title('CL x t')
+% xlim([0 t_final])
+% ylim([-3 3])
+% 
+% subplot(2,3,3)
+% plot(vet_t,V(:,1));
+% title('V x t')
+% xlim([0 t_final])
+% ylim([0 1.2*max(V)])
+% 
+% subplot(2,3,4)
+% plot(vet_t,alfa);
+% title('alfa x t')
+% xlim([0 t_final])
+% ylim([-30 30])
+% 
+% subplot(2,3,5)
+% plot(vet_t,Ma_vetor);
+% title('M_cg x t')
+% xlim([0 t_final])
+% ylim([-30 30])
