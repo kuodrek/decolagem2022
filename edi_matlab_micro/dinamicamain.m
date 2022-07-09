@@ -17,8 +17,8 @@ disp('Dados adquiridos!')
 %% Vetores iniciais X_0 e U_0
 X_0 = zeros(1,12);
 geral = AircraftData{2,1};
-z_mesa = geral(1,17) ; % Altura da mesa[m]
-X_0(9) = z_mesa;
+z_inicial = geral(1,17) ; % Altura do cg inicial[m]
+X_0(9) = z_inicial;
 superficies = AircraftData{3,1};
 dtmax = superficies(4,6);
 U_0 = [dtmax 0 0 0];
@@ -32,6 +32,9 @@ reacoes = [999 999 999];
 % 'rotacao' -> 2a parte da decolagem
 % 'subida' -> 3a parte da decolagem
 estado_do_aviao = 'corrida';
+%% Valores gerais
+superficies = AircraftData{3,1};
+iw = superficies(1,7);
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
@@ -50,19 +53,21 @@ check1 = 0;
 check2 = 0;
 
 Sd = geral(1,16);
-ac_eh = 3; 
-de_takeoff = -14* pi / 180;
+ac_eh = Sd;
 
 z_warning = 0.2;
 %% Definição de valores de limite
 qmax = 10 * pi / 180;
 gama_max = 20 * pi / 180;
 alfa_max = 20 * pi / 180;
+%% Variáveis de deflexão do profundor
+de_takeoff = -14* pi / 180;
+x_inicial = Sd;
+x_final = Sd;
 %% Simulação
 for i=1:n_pto
     solucao(i,:) = X;
     t = vet_t(i);
-    
     %% Verificação da fase da decolagem
     R_n = reacoes(1);
     R_tdp = reacoes(2);
@@ -70,7 +75,15 @@ for i=1:n_pto
     
     x_pos = X(7);
     if x_pos > ac_eh % fuguinha == 1 -> profundor é ativado
-        U(2) = de_takeoff;
+        if (x_final-x_inicial) == 0
+            de_atual = de_takeoff;
+        else
+            de_atual = de_takeoff / (x_final - x_inicial) * (x_pos - x_inicial);
+        end
+        if x_pos > x_final
+            de_atual = de_takeoff;
+        end
+        U(2) = de_atual;
     end
     
     if R_tdn > 0 && R_tdp > 0
@@ -98,6 +111,7 @@ for i=1:n_pto
     if X(5) < -qmax
         X(5) = -qmax;
     end
+
     if X(11) < 0 && (strcmp(estado_do_aviao, 'corrida') && strcmp(estado_do_aviao, 'rotacao'))
         X(11) = 0;
     end
@@ -120,7 +134,7 @@ u = solucao(:,1);
 v = solucao(:,2);
 w = solucao(:,3);
 V = sqrt(u.^2+v.^2+w.^2);
-alfa = atan(w./u)*180/pi;
+gama = atan(w./u)*180/pi;
 beta = atan(v./V)*180/pi;
 p = solucao(:,4)*180/pi;
 q = solucao(:,5)*180/pi;
@@ -131,7 +145,7 @@ z = solucao(:,9);
 phi = solucao(:,10)*180/pi;
 teta = solucao(:,11)*180/pi;
 psi = solucao(:,12)*180/pi;
-
+alfa = teta - gama;
 figure(1)
 subplot(2,3,1);
 plot(vet_t,reacoes_vetor(:,1));
@@ -163,11 +177,14 @@ ylim([0 3])
 hold off
 
 subplot(2,3,5);
+hold on
 teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
-plot(vet_t,teta);
-title('teta x t')
-xlim([0 t_final])
+plot(x,teta);
+plot(x,U_vet(:,2)*180/pi)
+title('teta x X')
+xlim([0 30])
 ylim([-30 30])
+hold off
 
 subplot(2,3,6);
 q_0 = q(1)*ones(size(q,1),size(q,2));
@@ -176,33 +193,37 @@ title('q x t')
 xlim([0 t_final])
 ylim([-20 20])
 
-% figure(2)
-% subplot(2,3,1)
-% plot(vet_t,L_vetor);
-% title('L x t')
-% xlim([0 t_final])
-% ylim([0 1.2*max(L_vetor)])
-% 
-% subplot(2,3,2)
-% plot(vet_t,CF_vetor(:,3));
-% title('CL x t')
-% xlim([0 t_final])
-% ylim([-3 3])
-% 
-% subplot(2,3,3)
-% plot(vet_t,V(:,1));
-% title('V x t')
-% xlim([0 t_final])
-% ylim([0 1.2*max(V)])
-% 
-% subplot(2,3,4)
-% plot(vet_t,alfa);
-% title('alfa x t')
-% xlim([0 t_final])
-% ylim([-30 30])
-% 
-% subplot(2,3,5)
-% plot(vet_t,Ma_vetor);
-% title('M_cg x t')
-% xlim([0 t_final])
-% ylim([-30 30])
+figure(2)
+subplot(2,3,1)
+plot(vet_t,L_vetor);
+title('L x t')
+xlim([0 t_final])
+ylim([0 1.2*max(L_vetor)])
+
+subplot(2,3,2)
+plot(vet_t,CF_vetor(:,3));
+title('CL x t')
+xlim([0 t_final])
+ylim([0 3])
+
+subplot(2,3,3)
+plot(vet_t,V(:,1));
+title('V x t')
+xlim([0 t_final])
+ylim([0 1.2*max(V)])
+
+subplot(2,3,4)
+plot(vet_t,gama);
+title('gama x t')
+xlim([0 t_final])
+ylim([-30 30])
+
+alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
+subplot(2,3,5)
+hold on
+plot(vet_t,alfa);
+plot(vet_t,alfa_asa);
+title('alfa x t')
+xlim([0 t_final])
+ylim([-30 30])
+hold off

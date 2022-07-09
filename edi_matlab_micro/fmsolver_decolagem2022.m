@@ -1,9 +1,4 @@
 function [Fa,Ft,Ha,Ht,CF] = fmsolver_decolagem2022(X,U,AircraftData,estado_do_aviao)
-u = X(1);
-w = X(3);
-q = X(5);
-teta = X(11);
-
 % Vx = X[0]
 % Vz = X[1]
 % q = X[2]
@@ -11,6 +6,10 @@ teta = X(11);
 % z_pos = X[4]
 % teta = X[5]
 
+u = X(1);
+w = X(3);
+q = X(5);
+teta = X(11);
 % Controle
 dt = U(1);
 de = U(2);
@@ -18,12 +17,18 @@ de = U(2);
 V = sqrt(u^2 + w^2);
 %% Verificar fase de decolagem do avião
 alfa_max = 20 * pi / 180;
+gama_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
-    % Jeito EDI de calcular o alfa
-    % alfa = atan(w/u);
-    % Jeito do pdf de calcular os angulos
     gama = atan(w/u);
     alfa = teta - gama;
+    %% Restrição de alfa máximo
+    if gama > gama_max
+        gama = gama_max;
+    end
+    if gama < -gama_max
+        gama = -gama_max;
+    end
+    %% Restrição de gama máximo
     if alfa > alfa_max
         alfa = alfa_max;
     end
@@ -97,7 +102,7 @@ CD = CDw + nh*Sh/Sw*CDh;
 D = Q*Sref*CD;
 CL = CLaw*(alfa+iw) + CL0w + nh*Sh/Sw*(CLah*alfah + CL0h) + CLde*de;
 if V ~= 0
-    CL = CL + CLq*q*cref/(2*V); 
+    CL = CL + CLq*q*cref/(2*V);
 end
 
 FS = 0.95;
