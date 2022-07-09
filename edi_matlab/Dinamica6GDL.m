@@ -20,6 +20,7 @@ q = X(5);
 phi = X(10);
 teta = X(11);
 psi = X(12);
+
 %% Vento no sistema NED (north, east, down)
 Nvento = H(1);
 Evento = H(2);
@@ -42,9 +43,19 @@ X(2) = v;
 X(3) = w;
 
 %% Velocidades e ângulos de ataque / derrapagem
-V = sqrt(u^2 + w^2);
+alfa_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
-    alfa = atan(w/u);
+    % Jeito EDI de calcular o alfa
+    % alfa = atan(w/u);
+    % Jeito do pdf de calcular os angulos
+    gama = atan(w/u);
+    alfa = teta - gama;
+    if alfa > alfa_max
+        alfa = alfa_max;
+    end
+    if alfa < -alfa_max
+        alfa = -alfa_max;
+    end
 else
     alfa = teta;
 end
@@ -113,9 +124,18 @@ if R_n > 0
 else
     % Reações dos trens de pouso e nariz = 0 -> Avião voando
     % Referencia: horizon
-%     disp('aviao voando')
-    up = (T* cos(teta) - D* cos(alfa) - L* sin(alfa))/m;
-    wp = (T* sin(teta) + L* cos(alfa) - W - D* sin(alfa))/m;
+    
+    gama = atan(w/u);
+    alfa = teta - gama;
+    if alfa > alfa_max
+        alfa = alfa_max;
+    end
+    if alfa < -alfa_max
+        alfa = -alfa_max;
+    end
+    
+    up = (T* cos(teta) - D* cos(gama) - L* sin(gama))/m;
+    wp = (T* sin(teta) + L* cos(gama) - W - D* sin(gama))/m;
     qp = (Ma - Mt)/Iyy;
     np = u;
     hp = w;
