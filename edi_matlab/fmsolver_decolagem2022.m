@@ -17,19 +17,22 @@ de = U(2);
 
 V = sqrt(u^2 + w^2);
 %% Verificar fase de decolagem do avião
+alfa_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
-    alfa = atan(w/u);
+    % Jeito EDI de calcular o alfa
+    % alfa = atan(w/u);
+    % Jeito do pdf de calcular os angulos
+    gama = atan(w/u);
+    alfa = teta - gama;
+    if alfa > alfa_max
+        alfa = alfa_max;
+    end
+    if alfa < -alfa_max
+        alfa = -alfa_max;
+    end
 else
     alfa = teta;
 end
-
-% if Vz == 0
-%     alfa = teta;
-%     gama = 0;
-% else
-%     alfa =  atan(Vz/Vx);
-%     gama = teta - alfa;
-% end
 
 % Dados gerais
 geral = AircraftData{2,1};
@@ -54,6 +57,7 @@ depsilondalpha = superficies(1,8);
 epsilon0 = superficies(1,9);
 CDw_c = [superficies(1,10) superficies(1,11) superficies(1,12)];
 xac = superficies(1,13);
+CLmax = superficies(1,14);
 % Dados EH
 Sh = superficies(2,1);
 CLah = superficies(2,2);
@@ -95,18 +99,18 @@ CL = CLaw*(alfa+iw) + CL0w + nh*Sh/Sw*(CLah*alfah + CL0h) + CLde*de;
 if V ~= 0
     CL = CL + CLq*q*cref/(2*V); 
 end
-L = Q*Sref*CL;
 
-% CL = CL_alfa * alfa + CL_de * de + CL_q * q + CL_0;
-% CD = polyval(CD_poly, alfa);
-% Cm_cg = Cm_alfa * alfa + Cm_de * de + Cm_q * q + Cm_0;
+FS = 0.95;
+if CL > FS*CLmax
+    CL = CLmax;
+end
+L = Q*Sref*CL;
 
 Fa = [D 0 L];
 
 Cmcgw = (xcg-xac)*((CL0w + CLaw*(alfa+iw))*cos(alfa+iw)+CDw*sin(alfa+iw)) + zcg/cref*((CL0w + CLaw*(alfa+iw))*sin(alfa+iw)-CDw*cos(alfa+iw)) + Cmacw;
 Vhz = zh*Sh/(cref*Sref);
 Cmcgh = -nh*Vh*((CL0h+CLah*alfah)*cos(alfah)+CDh*sin(alfah)) -nh*Vhz*(CDh*cos(alfah)-(CL0h+CLah*alfah)*sin(alfah))+ nh*Sh/Sw*Cmach;
-% Cm = Cmacw + (CL0w + CLaw*(alfa+iw))*(xcg-xac) + nh*Sh/Sw*Cmach - nh*Vh*(CL0h+CLah*alfah) + Cmde*de + Cmq*q/(2*V);
 Cm =  Cmcgw + Cmcgh + Cmde*de;
 if V ~= 0
     Cm = Cm + Cmq*q/(2*V);
