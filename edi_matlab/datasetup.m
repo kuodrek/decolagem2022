@@ -47,6 +47,7 @@ CDw_c1 = superficies(10,1)*(180/pi)^2;
 CDw_c2 = superficies(11,1)*(180/pi);
 CDw_c3 = superficies(12,1);
 xac = superficies(13,1);
+CLmax = superficies(14,1);
 % Dados EH
 Sh = superficies(1,3);
 CLah = superficies(2,3)*180/pi;
@@ -66,10 +67,10 @@ drmax = superficies(6,5)*pi/180;
 dtmin = superficies(1,7);
 dtmax = superficies(2,7);
 nhelice = superficies(3,7);
-data{3,1} = [Sw CLaw CL0w Cmacw damin damax iw depsilondalpha epsilon0 CDw_c1 CDw_c2 CDw_c3 xac;...
-             Sh CLah CL0h Cmach demin demax ih Vh 0 CDh_c1 CDh_c2 CDh_c3 0;...
-             0 0 0 0 drmin drmax 0 0 0 0 0 0 0;...
-             0 0 0 0 dtmin dtmax 0 0 0 0 0 0 0];
+data{3,1} = [Sw CLaw CL0w Cmacw damin damax iw depsilondalpha epsilon0 CDw_c1 CDw_c2 CDw_c3 xac CLmax;...
+             Sh CLah CL0h Cmach demin demax ih Vh 0 CDh_c1 CDh_c2 CDh_c3 0 0;...
+             0 0 0 0 drmin drmax 0 0 0 0 0 0 0 0;...
+             0 0 0 0 dtmin dtmax 0 0 0 0 0 0 0 0];
 
 % Derivadas
 derivadas = xlsread('dinamicadados.xlsx','Derivadas');
