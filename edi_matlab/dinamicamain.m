@@ -45,9 +45,11 @@ U = U_0;
 H = H_0;
 check1 = 0;
 check2 = 0;
+j=1;
+x_decolage(1)=0;
 
 Sd = 58;
-ac_eh = 35; 
+ac_eh = 20; 
 de_takeoff = -15 * pi / 180;
 
 ac_desativacao = 1000;
@@ -81,6 +83,14 @@ for i=1:n_pto
         estado_do_aviao = 'rotacao';
     elseif R_tdn == 0 && R_tdp == 0
         estado_do_aviao = 'subida';
+        x_decolage(j)=x_pos;
+        V_decolage(j)=sqrt(X(1).^2+X(2).^2+X(3).^2);
+        if abs(x_pos-Sd)<0.05
+            fprintf('z[m]: %g\n', X(9))
+            fprintf('x[m]: %g\n', x_decolage(1))
+            fprintf('V[m/s]: %g\n', V_decolage(1))
+        end
+        j=j+1;
     end
     vetor_de_estados{i} = {estado_do_aviao};
 %% Runge-kutta
