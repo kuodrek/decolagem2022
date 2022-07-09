@@ -47,11 +47,16 @@ check1 = 0;
 check2 = 0;
 
 Sd = 58;
-ac_eh = 43; 
-de_takeoff = 0 * pi / 180;
+ac_eh = 35; 
+de_takeoff = -15 * pi / 180;
 
-ac_desativacao = 53;
+ac_desativacao = 1000;
 
+%% Definição de valores de limite
+qmax = 10 * pi / 180;
+gama_max = 20 * pi / 180;
+alfa_max = 20 * pi / 180;
+%% Simulação
 for i=1:n_pto
     solucao(i,:) = X;
     t = vet_t(i);
@@ -62,7 +67,7 @@ for i=1:n_pto
     R_tdn = reacoes(3);
     
     x_pos = X(7);
-    if x_pos > ac_eh
+    if x_pos > ac_eh % fuguinha == 1 -> profundor é ativado
         U(2) = de_takeoff;
     end
     
@@ -88,10 +93,16 @@ for i=1:n_pto
     K4=Dinamica6GDL(X+h*K3,U,H,AircraftData,estado_do_aviao);
     X=X+h/6*(K1+2*K2+2*K3+K4);
     
+    if X(5) > qmax
+        X(5) = qmax;
+    end
+    if X(5) < -qmax
+        X(5) = -qmax;
+    end
     L_vetor(i,:) = Fa(3);
     reacoes_vetor(i,:) = [reacoes x_pos];
     Xp_vetor(i,:) = K1;
-    %% Condição de parada
+%% Condição de parada
 %     R_n = reacoes(1);
 %     if R_n < 0
 %         break
@@ -157,7 +168,26 @@ xlim([0 t_final])
 ylim([-20 20])
 
 figure(2)
+subplot(2,3,1)
 plot(vet_t,L_vetor);
 title('L x t')
 xlim([0 t_final])
 ylim([0 1.2*max(L_vetor)])
+
+subplot(2,3,2)
+plot(vet_t,CF_vetor(:,3));
+title('CL x t')
+xlim([0 t_final])
+ylim([-3 3])
+
+subplot(2,3,3)
+plot(vet_t,V(:,1));
+title('V x t')
+xlim([0 t_final])
+ylim([0 1.2*max(V)])
+
+subplot(2,3,4)
+plot(vet_t,alfa);
+title('alfa x t')
+xlim([0 t_final])
+ylim([-30 30])
