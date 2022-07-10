@@ -18,6 +18,8 @@ disp('Dados adquiridos!')
 %% Vetores iniciais X_0 e U_0
 X_0 = zeros(1,12);
 geral = AircraftData{2,1};
+z_inicial = geral(1,17) ; % Altura do cg inicial[m]
+X_0(9) = z_inicial;
 superficies = AircraftData{3,1};
 dtmax = superficies(4,6);
 U_0 = [dtmax 0 0 0];
@@ -30,10 +32,10 @@ reacoes = [999 999 999];
 % 'corrida' -> 1a parte da decolagem
 % 'rotacao' -> 2a parte da decolagem
 % 'subida' -> 3a parte da decolagem
+estado_do_aviao = 'corrida';
 %% Valores gerais
 superficies = AircraftData{3,1};
 iw = superficies(1,7);
-estado_do_aviao = 'corrida';
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
@@ -52,6 +54,7 @@ check1 = 0;
 check2 = 0;
 Sd = geral(1,16);
 %% Definição de valores limite
+% Velocidade de arfagem limite
 qmax = 10* pi / 180;
 %% Variáveis de deflexão do profundor
 ac_eh = 30;
@@ -83,14 +86,10 @@ obstaculo_check = false;
 %% Simulação
 for i=1:n_pto
     %% Gravar resultados da iteração atual
-    solucao(i,:) = X;
     t = vet_t(i);
-    %% Verificação da fase da decolagem
-    R_n = reacoes(1);
-    R_tdp = reacoes(2);
-    R_tdn = reacoes(3);
-    
+    solucao(i,:) = X;
     x_pos = X(7);
+    %% Ativação/Desativação do profundor
     if x_pos > ac_eh % fuguinha == 1 -> profundor é ativado
         if (x_final-x_inicial) == 0
             de_atual = de_takeoff;
@@ -102,12 +101,15 @@ for i=1:n_pto
         end
         U(2) = de_atual;
     end
-    % teste pra ver o que acontece se desativar o profundor
+    % Final da decolagem: x_pos > Sd
+    % Faz sentido esse critério final?
+    % Desativar o profundor após o final da decolagem
     if x_pos > Sd
         U(2) = -2*pi/180;
     end
-    
-%% Verificação do estado do avião
+    %% Verificação do estado do avião
+    R_tdp = reacoes(2);
+    R_tdn = reacoes(3);
     if R_tdn > 0 && R_tdp > 0
         estado_do_aviao = 'corrida';
     elseif R_tdn == 0 && R_tdp > 0
@@ -137,8 +139,9 @@ for i=1:n_pto
             obstaculo_check = true;
         end
     end
-    vetor_de_estados{i} = {estado_do_aviao};
-%% Integrador Runge-kutta
+    vetor_de_estados{i,1} = {estado_do_aviao};
+    vetor_de_estados{i,2} = t;
+    %% Integrador Runge-kutta
     U_vet(i,:) = U;
     K1=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
     [~,CF,reacoes,Fa]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
@@ -148,13 +151,18 @@ for i=1:n_pto
     K3=Dinamica6GDL(X+h/2*K2,U,H,AircraftData,estado_do_aviao);
     K4=Dinamica6GDL(X+h*K3,U,H,AircraftData,estado_do_aviao);
     X=X+h/6*(K1+2*K2+2*K3+K4);
-    
+    %% Restrições físicas
     % Verificar se |q| > |qmax| no estado atual do avião
     if X(5) > qmax
         X(5) = qmax;
     end
     if X(5) < -qmax
         X(5) = -qmax;
+    end
+    
+    % Se o avião está correndo ele não pode ter teta < 0
+    if X(11) < 0 && (strcmp(estado_do_aviao, 'corrida') && strcmp(estado_do_aviao, 'rotacao'))
+        X(11) = 0;
     end
     %% Vetores de forças e momentos
     L_vetor(i,:) = Fa(3);
@@ -182,7 +190,7 @@ fprintf('V[m/s] ao decolar: %.2f\n', V_liftoff)
 fprintf('teta[°] ao decolar: %.2f\n', teta_liftoff * 180/pi)
 fprintf('alfa da asa[°] ao decolar: %.2f\n', (teta_liftoff+iw) * 180/pi)
 fprintf('q[°/s] ao decolar: %.2f\n', q_liftoff * 180 / pi)
-fprintf('---OBSTACULO---\n')
+fprintf('---OBSTÁCULO---\n')
 fprintf('z[m] aos %gm: %.2f\n', Sd, z_decolage)
 fprintf('x[m] aos %gm: %.2f\n', Sd, x_decolage)
 fprintf('Vz[m/s] aos %gm: %.2f\n', Sd, Vz_decolage)
@@ -215,7 +223,7 @@ ylim([0 3*max(z)])
 % title('teta x X')
 % xlim([0 max(x)])
 % ylim([0 20])
-% 
+%
 % subplot(2,3,4);
 % q_0 = q(1)*ones(size(q,1),size(q,2));
 % plot(vet_t,q);
@@ -223,42 +231,42 @@ ylim([0 3*max(z)])
 % xlim([0 t_final])
 % ylim([-20 20])
 
-% figure(2)
-% subplot(2,3,1)
-% plot(vet_t,L_vetor);
-% title('L x t')
-% xlim([0 t_final])
-% ylim([0 1.2*max(L_vetor)])
-% 
-% subplot(2,3,2)
-% plot(vet_t,CF_vetor(:,3));
-% title('CL x t')
-% xlim([0 t_final])
-% ylim([0 3])
-% 
-% subplot(2,3,3)
-% plot(vet_t,V(:,1));
-% title('V x t')
-% xlim([0 t_final])
-% ylim([0 1.2*max(V)])
-% 
-% subplot(2,3,4)
-% hold on
-% plot(x,gama);
-% plot(x,U_vet(:,2)*180/pi)
-% hold off
-% title('gama x X')
-% legend('gama','\delta_{e}')
-% xlim([0 max(x)])
-% ylim([-30 30])
-% 
-% alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
-% subplot(2,3,5)
-% hold on
-% plot(x,alfa);
-% plot(x,alfa_asa);
-% hold off
-% legend('alfa_{aeronave}','alfa_{asa}')
-% title('alfa x X')
-% xlim([0 max(x)])
-% ylim([-30 30])
+figure(2)
+subplot(2,3,1)
+plot(vet_t,L_vetor);
+title('L x t')
+xlim([0 t_final])
+ylim([0 1.2*max(L_vetor)])
+
+subplot(2,3,2)
+plot(vet_t,CF_vetor(:,3));
+title('CL x t')
+xlim([0 t_final])
+ylim([0 3])
+
+subplot(2,3,3)
+plot(vet_t,V(:,1));
+title('V x t')
+xlim([0 t_final])
+ylim([0 1.2*max(V)])
+
+subplot(2,3,4)
+hold on
+plot(x,gama);
+plot(x,U_vet(:,2)*180/pi)
+hold off
+title('gama x X')
+legend('gama','\delta_{e}')
+xlim([0 max(x)])
+ylim([-30 30])
+
+alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
+subplot(2,3,5)
+hold on
+plot(x,alfa);
+plot(x,alfa_asa);
+hold off
+legend('alfa_{aeronave}','alfa_{asa}')
+title('alfa x X')
+xlim([0 max(x)])
+ylim([-30 30])
