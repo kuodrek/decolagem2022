@@ -29,8 +29,10 @@ Ib = [geral(13,1) geral(13,2) geral(13,3); geral(14,1) geral(14,2) geral(14,3); 
 x_tdp = geral(16,1);
 x_tdn = geral(17,1);
 mi = geral(18,1);
+Sd = geral(19,1);
+z_inicial = geral(20,1);
 data{6,1} = Ib;
-data{2,1} = [rho g Sref bref cref nh yp zp lp xcg zcg zh x_tdp x_tdn mi];
+data{2,1} = [rho g Sref bref cref nh yp zp lp xcg zcg zh x_tdp x_tdn mi Sd z_inicial];
 
 superficies = xlsread('dinamicadados.xlsx','Superficies');
 % Dados asa

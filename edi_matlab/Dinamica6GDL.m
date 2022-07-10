@@ -43,12 +43,19 @@ X(2) = v;
 X(3) = w;
 
 %% Velocidades e ângulos de ataque / derrapagem
+beta = 0;
 alfa_max = 20 * pi / 180;
+gama_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
-    % Jeito EDI de calcular o alfa
-    % alfa = atan(w/u);
-    % Jeito do pdf de calcular os angulos
     gama = atan(w/u);
+    %% Restrição de gama máximo
+    if gama > gama_max
+        gama = gama_max;
+    end
+    if gama < -gama_max
+        gama = -gama_max;
+    end
+    %% Restrição de alfa máximo
     alfa = teta - gama;
     if alfa > alfa_max
         alfa = alfa_max;
@@ -59,7 +66,6 @@ if strcmp(estado_do_aviao, 'subida')
 else
     alfa = teta;
 end
-beta = 0;
 %% Forças e momentos aerodinâmicos e de tração
 [Fa,Ft,Ha,Ht,CF] = fmsolver_decolagem2022(X,U,AircraftData,estado_do_aviao);
 

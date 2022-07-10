@@ -16,6 +16,7 @@ end
 disp('Dados adquiridos!')
 %% Vetores iniciais X_0 e U_0
 X_0 = zeros(1,12);
+geral = AircraftData{2,1};
 superficies = AircraftData{3,1};
 dtmax = superficies(4,6);
 U_0 = [dtmax 0 0 0];
@@ -28,6 +29,10 @@ reacoes = [999 999 999];
 % 'corrida' -> 1a parte da decolagem
 % 'rotacao' -> 2a parte da decolagem
 % 'subida' -> 3a parte da decolagem
+%% Valores gerais
+superficies = AircraftData{3,1};
+iw = superficies(1,7);
+
 estado_do_aviao = 'corrida';
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
@@ -46,18 +51,35 @@ H = H_0;
 check1 = 0;
 check2 = 0;
 j=1;
-x_decolage(1)=0;
-
-Sd = 58;
-ac_eh = 20; 
-de_takeoff = -15 * pi / 180;
-
-ac_desativacao = 1000;
-
-%% Definição de valores de limite
-qmax = 10 * pi / 180;
-gama_max = 20 * pi / 180;
-alfa_max = 20 * pi / 180;
+Sd = geral(1,16);
+%% Definição de valores limite
+qmax = 20 * pi / 180;
+%% Variáveis de deflexão do profundor
+ac_eh = 30;
+de_takeoff = -15* pi / 180;
+x_inicial = ac_eh;
+x_final = ac_eh;
+%% Variáveis de decolagem ao liftoff (Avião sai do chão)
+x_liftoff = 0;
+V_liftoff = 0;
+gama_liftoff = 0;
+teta_liftoff = 0;
+% Variável que pega o estado do avião ao passar pelo obstáculo.
+% liftoff_check = false -> Avião não saiu do chão
+% liftoff_check = true -> Avião saiu do chão
+liftoff_check = false;
+%% Variáveis de decolagem ao avião passar pelo obstáculo
+x_decolage=0;
+Vz_decolage=0;
+V_decolage=0;
+z_decolage=0;
+gama_decolage=0;
+teta_decolage=0;
+alfa_decolage=0;
+% Variável que pega o estado do avião ao passar pelo obstáculo.
+% obstaculo_check = false -> Avião não passou pelo obstáculo
+% obstaculo_check = true -> Avião passou pelo obstáculo
+obstaculo_check = false;
 %% Simulação
 for i=1:n_pto
     solucao(i,:) = X;
@@ -70,53 +92,70 @@ for i=1:n_pto
     
     x_pos = X(7);
     if x_pos > ac_eh % fuguinha == 1 -> profundor é ativado
-        U(2) = de_takeoff;
+        if (x_final-x_inicial) == 0
+            de_atual = de_takeoff;
+        else
+            de_atual = de_takeoff / (x_final - x_inicial) * (x_pos - x_inicial);
+        end
+        if x_pos > x_final
+            de_atual = de_takeoff;
+        end
+        U(2) = de_atual;
     end
     
-    if x_pos > ac_desativacao
-        U(2) = 0;
-    end
-    
+%% Verificação do estado do avião
     if R_tdn > 0 && R_tdp > 0
         estado_do_aviao = 'corrida';
     elseif R_tdn == 0 && R_tdp > 0
         estado_do_aviao = 'rotacao';
     elseif R_tdn == 0 && R_tdp == 0
         estado_do_aviao = 'subida';
-        x_decolage(j)=x_pos;
-        V_decolage(j)=sqrt(X(1).^2+X(2).^2+X(3).^2);
-        if abs(x_pos-Sd)<0.05
-            fprintf('z[m]: %g\n', X(9))
-            fprintf('x[m]: %g\n', x_decolage(1))
-            fprintf('V[m/s]: %g\n', V_decolage(1))
+        %% Pegar estado do avião no momento em que ele sai do chão
+        if liftoff_check == false
+            x_liftoff = x_pos;
+            V_liftoff = sqrt(X(1).^2+X(3).^2);
+            teta_liftoff = X(11);
+            liftoff_check = true;
+        end
+        %% Verificar se o avião passa ou não do obstáculo em 58m (Altura do obstáculo: 0.7m)
+        if abs(x_pos-Sd)<0.05 && obstaculo_check == false
+            x_decolage = x_pos;
+            Vz_decolage = X(3);
+            V_decolage = sqrt(X(1).^2+X(3).^2);
+            z_decolage = X(9);
+            gama_decolage = atan(X(3)/X(1));
+            teta_decolage = X(11);
+            alfa_decolage = teta_decolage - gama_decolage;
+            if z_decolage < 0.7
+                fprintf('gol do marcilio dias :(\n')
+            end
+            obstaculo_check = true;
         end
         j=j+1;
     end
     vetor_de_estados{i} = {estado_do_aviao};
-%% Runge-kutta
+%% Integrador Runge-kutta
     U_vet(i,:) = U;
     K1=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
     [~,CF,reacoes,Fa]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
+    % Vetor de coeficientes aerodinâmicos
     CF_vetor(i,:) = CF;
     K2=Dinamica6GDL(X+h/2*K1,U,H,AircraftData,estado_do_aviao);
     K3=Dinamica6GDL(X+h/2*K2,U,H,AircraftData,estado_do_aviao);
     K4=Dinamica6GDL(X+h*K3,U,H,AircraftData,estado_do_aviao);
     X=X+h/6*(K1+2*K2+2*K3+K4);
     
+    % Verificar se |q| > |qmax| no estado atual do avião
     if X(5) > qmax
         X(5) = qmax;
     end
     if X(5) < -qmax
         X(5) = -qmax;
     end
+    %% Vetores de forças e momentos
     L_vetor(i,:) = Fa(3);
     reacoes_vetor(i,:) = [reacoes x_pos];
     Xp_vetor(i,:) = K1;
-%% Condição de parada
-%     R_n = reacoes(1);
-%     if R_n < 0
-%         break
-%     end
 end
 %% Pós processamento
 t_excel = vet_t';
@@ -126,7 +165,7 @@ u = solucao(:,1);
 v = solucao(:,2);
 w = solucao(:,3);
 V = sqrt(u.^2+v.^2+w.^2);
-alfa = atan(w./u)*180/pi;
+gama = atan(w./u)*180/pi;
 beta = atan(v./V)*180/pi;
 p = solucao(:,4)*180/pi;
 q = solucao(:,5)*180/pi;
@@ -137,7 +176,23 @@ z = solucao(:,9);
 phi = solucao(:,10)*180/pi;
 teta = solucao(:,11)*180/pi;
 psi = solucao(:,12)*180/pi;
-
+alfa = teta - gama;
+%% Output da decolagem
+fprintf('---LIFTOFF---\n')
+alfa_liftoff = teta_liftoff - gama_liftoff;
+fprintf('x[m] ao decolar: %.2f\n', x_liftoff)
+fprintf('V[m/s] ao decolar: %.2f\n', V_liftoff)
+fprintf('teta[°] ao decolar: %.2f\n', teta_liftoff * 180/pi)
+fprintf('alfa da asa[°] ao decolar: %.2f\n', (teta_liftoff+iw) * 180/pi)
+fprintf('---OBSTACULO---\n')
+fprintf('z[m] aos %gm: %.2f\n', Sd, z_decolage)
+fprintf('x[m] aos %gm: %.2f\n', Sd, x_decolage)
+fprintf('Vz[m/s] aos %gm: %.2f\n', Sd, Vz_decolage)
+fprintf('V[m/s] aos %gm: %.2f\n', Sd, V_decolage)
+fprintf('gama[°] aos %gm: %.2f\n', Sd, gama_decolage * 180 / pi)
+fprintf('teta[°] aos %gm: %.2f\n', Sd, teta_decolage * 180 / pi)
+fprintf('alfa da asa[°] aos %gm: %.2f\n', Sd, (alfa_decolage+iw) * 180 / pi)
+%% Gráficos
 figure(1)
 subplot(2,3,1);
 plot(vet_t,reacoes_vetor(:,1));
@@ -164,11 +219,14 @@ xlim([0 max(x)])
 ylim([0 40])
 
 subplot(2,3,5);
+hold on
 teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
-plot(vet_t,teta);
-title('teta x t')
-xlim([0 t_final])
+plot(x,teta);
+plot(x,U_vet(:,2)*180/pi)
+title('teta x X')
+xlim([0 100])
 ylim([-30 30])
+hold off
 
 subplot(2,3,6);
 q_0 = q(1)*ones(size(q,1),size(q,2));
@@ -188,7 +246,7 @@ subplot(2,3,2)
 plot(vet_t,CF_vetor(:,3));
 title('CL x t')
 xlim([0 t_final])
-ylim([-3 3])
+ylim([0 3])
 
 subplot(2,3,3)
 plot(vet_t,V(:,1));
@@ -197,7 +255,17 @@ xlim([0 t_final])
 ylim([0 1.2*max(V)])
 
 subplot(2,3,4)
+plot(vet_t,gama);
+title('gama x t')
+xlim([0 t_final])
+ylim([-30 30])
+
+alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
+subplot(2,3,5)
+hold on
 plot(vet_t,alfa);
+plot(vet_t,alfa_asa);
 title('alfa x t')
 xlim([0 t_final])
 ylim([-30 30])
+hold off

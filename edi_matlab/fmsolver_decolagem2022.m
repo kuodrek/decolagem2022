@@ -18,11 +18,17 @@ de = U(2);
 V = sqrt(u^2 + w^2);
 %% Verificar fase de decolagem do avião
 alfa_max = 20 * pi / 180;
+gama_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
-    % Jeito EDI de calcular o alfa
-    % alfa = atan(w/u);
-    % Jeito do pdf de calcular os angulos
     gama = atan(w/u);
+    %% Restrição de gama máximo
+    if gama > gama_max
+        gama = gama_max;
+    end
+    if gama < -gama_max
+        gama = -gama_max;
+    end
+    %% Restrição de alfa máximo
     alfa = teta - gama;
     if alfa > alfa_max
         alfa = alfa_max;
@@ -100,7 +106,7 @@ if V ~= 0
     CL = CL + CLq*q*cref/(2*V); 
 end
 
-FS = 0.95;
+FS = 1;
 if CL > FS*CLmax
     CL = CLmax;
 end
