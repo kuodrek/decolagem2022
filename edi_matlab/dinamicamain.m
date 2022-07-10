@@ -32,7 +32,6 @@ reacoes = [999 999 999];
 %% Valores gerais
 superficies = AircraftData{3,1};
 iw = superficies(1,7);
-
 estado_do_aviao = 'corrida';
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
@@ -50,10 +49,9 @@ U = U_0;
 H = H_0;
 check1 = 0;
 check2 = 0;
-j=1;
 Sd = geral(1,16);
 %% Definição de valores limite
-qmax = 20 * pi / 180;
+qmax = 15 * pi / 180;
 %% Variáveis de deflexão do profundor
 ac_eh = 30;
 de_takeoff = -15* pi / 180;
@@ -131,7 +129,6 @@ for i=1:n_pto
             end
             obstaculo_check = true;
         end
-        j=j+1;
     end
     vetor_de_estados{i} = {estado_do_aviao};
 %% Integrador Runge-kutta
@@ -162,20 +159,13 @@ t_excel = vet_t';
 disp('Fim da simulação. Plotando gráficos...')
 %  Xp = [up vp wp pp qp rp xp_e yp_e zp_e phip tetap psip]';
 u = solucao(:,1);
-v = solucao(:,2);
 w = solucao(:,3);
 V = sqrt(u.^2+v.^2+w.^2);
 gama = atan(w./u)*180/pi;
-beta = atan(v./V)*180/pi;
-p = solucao(:,4)*180/pi;
 q = solucao(:,5)*180/pi;
-r = solucao(:,6)*180/pi;
 x = solucao(:,7);
-y = solucao(:,8);
 z = solucao(:,9);
-phi = solucao(:,10)*180/pi;
 teta = solucao(:,11)*180/pi;
-psi = solucao(:,12)*180/pi;
 alfa = teta - gama;
 %% Output da decolagem
 fprintf('---LIFTOFF---\n')
