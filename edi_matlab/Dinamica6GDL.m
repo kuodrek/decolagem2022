@@ -5,12 +5,12 @@ controle = AircraftData{1,1};
 g = geral(1,2);
 m = controle(1,5);
 W = m*g;
-Ib = AircraftData{6,1};
+Ib = AircraftData{7,1};
 Iyy = Ib(2,2);
 x_tdp = geral(1,13);
 x_tdn = geral(1,14);
 mi = geral(1,15);
-%% Vetor de estados (Só é utilizado u, w, q, teta)
+%% Vetor de estados (Só é utilizado u, w, q, teta, x, z)
 u = X(1);
 v = X(2);
 w = X(3);
@@ -80,16 +80,6 @@ T = Ft(1);
 % Momentos aerodinâmico e de tração
 Ma = Ha(2);
 Mt = Ht(2);
-
-% Determinação das taxas de velocidade linear (u, v, w) no sistema da aeronave
-Cba = [cos(alfa)*cos(beta),-cos(alfa)*sin(beta),-sin(alfa);
-    sin(beta),cos(beta),0;
-    sin(alfa)*cos(beta),-sin(alfa)*sin(beta),cos(alfa)];
-ForcasCorpo = Cba*[-D;C;-L];
-
-Xa = ForcasCorpo(1);
-Za = ForcasCorpo(3);
-
 %% Reação dos trens de pouso e nariz
 R_n = W - T*sin(teta) - L;
 
@@ -118,14 +108,14 @@ if R_n > 0
         % Reação do trem de nariz > 0 -> Avião correndo na pista (não rotacionou)
         qp = 0;
         tetap = 0;
-        np = u;
-        hp = 0;
+        x_pos_p = u;
+        z_pos_p = 0;
     else
         % Reação do trem de nariz = 0 -> Avião rotacionando
         qp = (Ma - Mt + P_cg) / Iyy;
         tetap = q;
-        np = u;
-        hp = 0;
+        x_pos_p = u;
+        z_pos_p = 0;
     end
 else
     % Reações dos trens de pouso e nariz = 0 -> Avião voando
@@ -133,6 +123,12 @@ else
     
     gama = atan(w/u);
     alfa = teta - gama;
+    if gama > gama_max
+        gama = gama_max;
+    end
+    if gama < -gama_max
+        gama = -gama_max;
+    end
     if alfa > alfa_max
         alfa = alfa_max;
     end
@@ -143,8 +139,8 @@ else
     up = (T* cos(teta) - D* cos(gama) - L* sin(gama))/m;
     wp = (T* sin(teta) + L* cos(gama) - W - D* sin(gama))/m;
     qp = (Ma - Mt)/Iyy;
-    np = u;
-    hp = w;
+    x_pos_p = u;
+    z_pos_p = w;
     tetap = q;
 end
 
@@ -163,5 +159,5 @@ if qp < 0
     aaaa = 1;
 end
 reacoes = [R_n R_tdp R_tdn];
-Xp = [up 0 wp 0 qp 0 np 0 hp 0 tetap 0];
+Xp = [up 0 wp 0 qp 0 x_pos_p 0 z_pos_p 0 tetap 0];
 end
