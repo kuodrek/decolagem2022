@@ -61,9 +61,8 @@ Cmacw = superficies(1,4);
 iw = superficies(1,7);
 depsilondalpha = superficies(1,8);
 epsilon0 = superficies(1,9);
-CDw_c = [superficies(1,10) superficies(1,11) superficies(1,12)];
-xac = superficies(1,13);
-CLmax = superficies(1,14);
+xac = superficies(1,10);
+CLmax = superficies(1,11);
 % Dados EH
 Sh = superficies(2,1);
 CLah = superficies(2,2);
@@ -73,14 +72,26 @@ Cmach = superficies(2,4);
 % demax = superficies(2,6);
 ih = superficies(2,7);
 Vh = superficies(2,8);
-CDh_c = [superficies(2,10) superficies(2,11) superficies(2,12)];
 
-motorInput = AircraftData{5,1};
+% Dados de arrasto
+arrasto = AircraftData{4,1};
+% Asa
+CDpw_c = [arrasto(1,1) arrasto(1,2)];
+CDiw_c = [superficies(2,1) superficies(2,2) superficies(2,3)];
+% EH
+CDph_c = [arrasto(3,1) arrasto(3,2)];
+CDih_c = [arrasto(4,1) arrasto(4,2) arrasto(4,3)];
+% EV
+CDpv_c = [arrasto(5,1) arrasto(5,2)];
+% Fuselagem
+CDpf_c = [arrasto(6,1) arrasto(6,2)];
+
+motorInput = AircraftData{6,1};
 T = max(tracao(V,dt,motorInput),0);
 T = T*g;
 
 % Derivadas da aeronave
-derivadas = AircraftData{4,1};
+derivadas = AircraftData{5,1};
 % q
 CLq = derivadas(3,1);
 Cmq = derivadas(3,2);
@@ -96,9 +107,15 @@ Mt = T*zp;
 Ht = [0 Mt 0];
 
 alfah = alfa*(1-depsilondalpha) - epsilon0 + ih;
-CDw = CDw_c(1)*(alfa+iw)^2 + CDw_c(2)*(alfa+iw) + CDw_c(3);
-CDh = CDh_c(1)*alfah^2 + CDh_c(2)*alfah + CDh_c(3);
-CD = CDw + nh*Sh/Sw*CDh;
+CDiw = CDiw_c(1)*(alfa+iw)^2 + CDiw_c(2)*(alfa+iw) + CDiw_c(3);
+CDpw = CDpw_c(1)*V + CDpw_c(2);
+CDw = CDiw + CDpw;
+CDih = CDih_c(1)*alfah^2 + CDih_c(2)*alfah + CDih_c(3);
+CDph = CDph_c(1)*(V*nh) + CDph_c(2);
+CDh = CDih + CDph;
+CDpv = CDpv_c(1)*(V*nh) + CDpv_c(2);
+CDpf = CDpf_c(1)*V + CDpf_c(2);
+CD = CDw + nh*Sh/Sw*CDh + CDpv + CDpf;
 % EQUAÇÃO DE FORÇA EM X
 D = Q*Sref*CD;
 CL = CLaw*(alfa+iw) + CL0w + nh*Sh/Sw*(CLah*alfah + CL0h) + CLde*de;
@@ -106,7 +123,7 @@ if V ~= 0
     CL = CL + CLq*q*cref/(2*V); 
 end
 
-FS = 1;
+FS = 0.95;
 if CL > FS*CLmax
     CL = CLmax;
 end
