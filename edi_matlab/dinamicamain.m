@@ -1,7 +1,8 @@
-% DINAMICA 6 GDL SETUP
-clear
-clc
-clf
+% DECOLAGEM MONOPLANO 2022 REGULAR
+clear % Deleta variáveis do workspace
+clc % Limpa command window
+clf('reset') % Reseta todos os gráficos
+close all % Fecha todas as janelas de gráficos
 %% Chamar datasetup para os dados da aeronave
 disp('Chamando datasetup')
 global data_check
@@ -36,7 +37,7 @@ estado_do_aviao = 'corrida';
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
-t_final = 10;
+t_final = 15;
 h=20e-4;
 n_pto = (t_final-t_inicial)/h+1;
 vet_t=linspace(t_inicial,t_final,n_pto);   % Vetor dos tempos amostrados
@@ -51,17 +52,18 @@ check1 = 0;
 check2 = 0;
 Sd = geral(1,16);
 %% Definição de valores limite
-qmax = 15 * pi / 180;
+qmax = 10* pi / 180;
 %% Variáveis de deflexão do profundor
 ac_eh = 30;
-de_takeoff = -15* pi / 180;
+de_takeoff = -10* pi / 180;
 x_inicial = ac_eh;
-x_final = ac_eh;
+x_final = ac_eh+5;
 %% Variáveis de decolagem ao liftoff (Avião sai do chão)
 x_liftoff = 0;
 V_liftoff = 0;
 gama_liftoff = 0;
 teta_liftoff = 0;
+q_liftof = 0;
 % Variável que pega o estado do avião ao passar pelo obstáculo.
 % liftoff_check = false -> Avião não saiu do chão
 % liftoff_check = true -> Avião saiu do chão
@@ -80,9 +82,9 @@ alfa_decolage=0;
 obstaculo_check = false;
 %% Simulação
 for i=1:n_pto
+    %% Gravar resultados da iteração atual
     solucao(i,:) = X;
     t = vet_t(i);
-    
     %% Verificação da fase da decolagem
     R_n = reacoes(1);
     R_tdp = reacoes(2);
@@ -100,6 +102,10 @@ for i=1:n_pto
         end
         U(2) = de_atual;
     end
+    % teste pra ver o que acontece se desativar o profundor
+    if x_pos > Sd
+        U(2) = -2*pi/180;
+    end
     
 %% Verificação do estado do avião
     if R_tdn > 0 && R_tdp > 0
@@ -113,6 +119,7 @@ for i=1:n_pto
             x_liftoff = x_pos;
             V_liftoff = sqrt(X(1).^2+X(3).^2);
             teta_liftoff = X(11);
+            q_liftoff = X(5);
             liftoff_check = true;
         end
         %% Verificar se o avião passa ou não do obstáculo em 58m (Altura do obstáculo: 0.7m)
@@ -160,7 +167,7 @@ disp('Fim da simulação. Plotando gráficos...')
 %  Xp = [up vp wp pp qp rp xp_e yp_e zp_e phip tetap psip]';
 u = solucao(:,1);
 w = solucao(:,3);
-V = sqrt(u.^2+v.^2+w.^2);
+V = sqrt(u.^2+w.^2);
 gama = atan(w./u)*180/pi;
 q = solucao(:,5)*180/pi;
 x = solucao(:,7);
@@ -174,6 +181,7 @@ fprintf('x[m] ao decolar: %.2f\n', x_liftoff)
 fprintf('V[m/s] ao decolar: %.2f\n', V_liftoff)
 fprintf('teta[°] ao decolar: %.2f\n', teta_liftoff * 180/pi)
 fprintf('alfa da asa[°] ao decolar: %.2f\n', (teta_liftoff+iw) * 180/pi)
+fprintf('q[°/s] ao decolar: %.2f\n', q_liftoff * 180 / pi)
 fprintf('---OBSTACULO---\n')
 fprintf('z[m] aos %gm: %.2f\n', Sd, z_decolage)
 fprintf('x[m] aos %gm: %.2f\n', Sd, x_decolage)
@@ -184,78 +192,73 @@ fprintf('teta[°] aos %gm: %.2f\n', Sd, teta_decolage * 180 / pi)
 fprintf('alfa da asa[°] aos %gm: %.2f\n', Sd, (alfa_decolage+iw) * 180 / pi)
 %% Gráficos
 figure(1)
-subplot(2,3,1);
-plot(vet_t,reacoes_vetor(:,1));
-title('Reacao total x t')
-xlim([0 t_final])
+subplot(2,1,1);
+hold on
+plot(x,reacoes_vetor(:,1));
+plot(x,reacoes_vetor(:,2));
+plot(x,reacoes_vetor(:,3));
+hold off
+title('Reacões x X')
+legend('R_{total}','R_{tdp}','R_{tdn}')
+xlim([0 max(x)])
 ylim([0 max(reacoes_vetor(:,1))])
 
-subplot(2,3,2);
-plot(vet_t,reacoes_vetor(:,2));
-title('Reacao tdp x t')
-xlim([0 t_final])
-ylim([0 max(reacoes_vetor(:,2))])
-
-subplot(2,3,3);
-plot(vet_t,reacoes_vetor(:,3));
-title('Reacao tdn x t')
-xlim([0 t_final])
-ylim([0 max(reacoes_vetor(:,3))])
-
-subplot(2,3,4);
+subplot(2,1,2);
 plot(x,z);
 title('Z x X')
 xlim([0 max(x)])
-ylim([0 40])
+ylim([0 3*max(z)])
 
-subplot(2,3,5);
-hold on
-teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
-plot(x,teta);
-plot(x,U_vet(:,2)*180/pi)
-title('teta x X')
-xlim([0 100])
-ylim([-30 30])
-hold off
+% subplot(2,3,3);
+% teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
+% plot(x,teta);
+% title('teta x X')
+% xlim([0 max(x)])
+% ylim([0 20])
+% 
+% subplot(2,3,4);
+% q_0 = q(1)*ones(size(q,1),size(q,2));
+% plot(vet_t,q);
+% title('q x t')
+% xlim([0 t_final])
+% ylim([-20 20])
 
-subplot(2,3,6);
-q_0 = q(1)*ones(size(q,1),size(q,2));
-plot(vet_t,q);
-title('q x t')
-xlim([0 t_final])
-ylim([-20 20])
-
-figure(2)
-subplot(2,3,1)
-plot(vet_t,L_vetor);
-title('L x t')
-xlim([0 t_final])
-ylim([0 1.2*max(L_vetor)])
-
-subplot(2,3,2)
-plot(vet_t,CF_vetor(:,3));
-title('CL x t')
-xlim([0 t_final])
-ylim([0 3])
-
-subplot(2,3,3)
-plot(vet_t,V(:,1));
-title('V x t')
-xlim([0 t_final])
-ylim([0 1.2*max(V)])
-
-subplot(2,3,4)
-plot(vet_t,gama);
-title('gama x t')
-xlim([0 t_final])
-ylim([-30 30])
-
-alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
-subplot(2,3,5)
-hold on
-plot(vet_t,alfa);
-plot(vet_t,alfa_asa);
-title('alfa x t')
-xlim([0 t_final])
-ylim([-30 30])
-hold off
+% figure(2)
+% subplot(2,3,1)
+% plot(vet_t,L_vetor);
+% title('L x t')
+% xlim([0 t_final])
+% ylim([0 1.2*max(L_vetor)])
+% 
+% subplot(2,3,2)
+% plot(vet_t,CF_vetor(:,3));
+% title('CL x t')
+% xlim([0 t_final])
+% ylim([0 3])
+% 
+% subplot(2,3,3)
+% plot(vet_t,V(:,1));
+% title('V x t')
+% xlim([0 t_final])
+% ylim([0 1.2*max(V)])
+% 
+% subplot(2,3,4)
+% hold on
+% plot(x,gama);
+% plot(x,U_vet(:,2)*180/pi)
+% hold off
+% title('gama x X')
+% legend('gama','\delta_{e}')
+% xlim([0 max(x)])
+% ylim([-30 30])
+% 
+% alfa_asa = alfa + ones(size(alfa,1),size(alfa,2))*iw*180/pi;
+% subplot(2,3,5)
+% hold on
+% plot(x,alfa);
+% plot(x,alfa_asa);
+% hold off
+% legend('alfa_{aeronave}','alfa_{asa}')
+% title('alfa x X')
+% xlim([0 max(x)])
+% ylim([-30 30])
