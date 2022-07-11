@@ -1,7 +1,8 @@
-% DINAMICA 6 GDL SETUP
-clear
-clc
-clf
+% DECOLAGEM MONOPLANO 2022 MICRO
+clear % Deleta variáveis do workspace
+clc % Limpa command window
+clf('reset') % Reseta todos os gráficos
+close all % Fecha todas as janelas de gráficos
 %% Chamar datasetup para os dados da aeronave
 disp('Chamando datasetup')
 global data_check
@@ -39,7 +40,7 @@ iw = superficies(1,7);
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
 t_final = 5;
-h=20e-3;
+h=20e-4;
 n_pto = (t_final-t_inicial)/h+1;
 vet_t=linspace(t_inicial,t_final,n_pto);   % Vetor dos tempos amostrados
 U_vet=zeros(n_pto,4);
@@ -49,11 +50,7 @@ Xp_vetor = zeros(n_pto,12);
 X = X_0;
 U = U_0;
 H = H_0;
-check1 = 0;
-check2 = 0;
-
 Sd = geral(1,16);
-ac_eh = Sd;
 
 z_warning = 0.2;
 %% Definição de valores de limite
@@ -61,19 +58,20 @@ qmax = 10 * pi / 180;
 gama_max = 20 * pi / 180;
 alfa_max = 20 * pi / 180;
 %% Variáveis de deflexão do profundor
+ac_eh = Sd;
 de_takeoff = -14* pi / 180;
 x_inicial = Sd;
 x_final = Sd;
 %% Simulação
 for i=1:n_pto
-    solucao(i,:) = X;
+    %% Gravar resultados da iteração atual
     t = vet_t(i);
+    solucao(i,:) = X;
+    x_pos = X(7);
     %% Verificação da fase da decolagem
     R_n = reacoes(1);
     R_tdp = reacoes(2);
     R_tdn = reacoes(3);
-    
-    x_pos = X(7);
     if x_pos > ac_eh % fuguinha == 1 -> profundor é ativado
         if (x_final-x_inicial) == 0
             de_atual = de_takeoff;
@@ -85,7 +83,15 @@ for i=1:n_pto
         end
         U(2) = de_atual;
     end
-    
+    % Final da decolagem: x_pos > Sd
+    % Faz sentido esse critério final?
+    % Desativar o profundor após o final da decolagem
+    if x_pos > 10
+        U(2) = -2*pi/180;
+    end
+    %% Verificação do estado do avião
+    R_tdp = reacoes(2);
+    R_tdn = reacoes(3);
     if R_tdn > 0 && R_tdp > 0
         estado_do_aviao = 'corrida';
     elseif R_tdn == 0 && R_tdp > 0
@@ -98,13 +104,14 @@ for i=1:n_pto
 %% Runge-kutta
     U_vet(i,:) = U;
     K1=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
-    [~,CF,reacoes,Fa,momentos]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
+    [~,CF,reacoes,Fa]=Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao);
     CF_vetor(i,:) = CF;
     K2=Dinamica6GDL(X+h/2*K1,U,H,AircraftData,estado_do_aviao);
     K3=Dinamica6GDL(X+h/2*K2,U,H,AircraftData,estado_do_aviao);
     K4=Dinamica6GDL(X+h*K3,U,H,AircraftData,estado_do_aviao);
     X=X+h/6*(K1+2*K2+2*K3+K4);
-    
+    %% Restrições físicas
+    % Verificar se |q| > |qmax| no estado atual do avião
     if X(5) > qmax
         X(5) = qmax;
     end
@@ -112,19 +119,14 @@ for i=1:n_pto
         X(5) = -qmax;
     end
 
+    % Se o avião está correndo ele não pode ter teta < 0
     if X(11) < 0 && (strcmp(estado_do_aviao, 'corrida') && strcmp(estado_do_aviao, 'rotacao'))
         X(11) = 0;
     end
     %% Vetores de diversas forças e momentos
     L_vetor(i,:) = Fa(3);
     reacoes_vetor(i,:) = [reacoes x_pos t];
-    Ma_vetor(i) = momentos(1);
     Xp_vetor(i,:) = K1;
-%% Condição de parada
-%     R_n = reacoes(1);
-%     if R_n < 0
-%         break
-%     end
 end
 %% Pós processamento
 t_excel = vet_t';
@@ -146,28 +148,22 @@ phi = solucao(:,10)*180/pi;
 teta = solucao(:,11)*180/pi;
 psi = solucao(:,12)*180/pi;
 alfa = teta - gama;
+%% Gráficos
 figure(1)
-subplot(2,3,1);
-plot(vet_t,reacoes_vetor(:,1));
-title('Reacao total x t')
-xlim([0 t_final])
+subplot(2,1,1);
+hold on
+plot(x,reacoes_vetor(:,1));
+plot(x,reacoes_vetor(:,2));
+plot(x,reacoes_vetor(:,3));
+hold off
+title('Reacões x X')
+legend('R_{total}','R_{tdp}','R_{tdn}')
+xlim([0 max(x)])
 ylim([0 max(reacoes_vetor(:,1))])
-
-subplot(2,3,2);
-plot(vet_t,reacoes_vetor(:,2));
-title('Reacao tdp x t')
-xlim([0 t_final])
-ylim([0 max(reacoes_vetor(:,2))])
-
-subplot(2,3,3);
-plot(vet_t,reacoes_vetor(:,3));
-title('Reacao tdn x t')
-xlim([0 t_final])
-ylim([0 max(reacoes_vetor(:,3))])
 
 z_warning_vetor = ones(size(z,1),size(z,2))*z_warning;
 fprintf("zmin: %g\n", min(z))
-subplot(2,3,4);
+subplot(2,1,2);
 hold on
 plot(x,z);
 plot(x,z_warning_vetor);
@@ -176,22 +172,22 @@ xlim([0 30])
 ylim([0 3])
 hold off
 
-subplot(2,3,5);
-hold on
-teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
-plot(x,teta);
-plot(x,U_vet(:,2)*180/pi)
-title('teta x X')
-xlim([0 30])
-ylim([-30 30])
-hold off
-
-subplot(2,3,6);
-q_0 = q(1)*ones(size(q,1),size(q,2));
-plot(vet_t,q);
-title('q x t')
-xlim([0 t_final])
-ylim([-20 20])
+% subplot(2,3,5);
+% hold on
+% teta_0 = teta(1)*ones(size(teta,1),size(teta,2));
+% plot(x,teta);
+% plot(x,U_vet(:,2)*180/pi)
+% title('teta x X')
+% xlim([0 30])
+% ylim([-30 30])
+% hold off
+% 
+% subplot(2,3,6);
+% q_0 = q(1)*ones(size(q,1),size(q,2));
+% plot(vet_t,q);
+% title('q x t')
+% xlim([0 t_final])
+% ylim([-20 20])
 
 figure(2)
 subplot(2,3,1)

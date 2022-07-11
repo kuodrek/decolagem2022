@@ -1,11 +1,11 @@
-function [Xp,CF,reacoes,Fa, momentos] = Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao)
+function [Xp,CF,reacoes,Fa] = Dinamica6GDL(X,U,H,AircraftData,estado_do_aviao)
 %% Dados do avião
 geral = AircraftData{2,1};
 controle = AircraftData{1,1};
 g = geral(1,2);
 m = controle(1,5);
 W = m*g;
-Ib = AircraftData{6,1};
+Ib = AircraftData{7,1};
 Iyy = Ib(2,2);
 x_tdp = geral(1,13);
 x_tdn = geral(1,14);
@@ -148,12 +148,6 @@ elseif R_n == 0 || x_pos > Sd
     tetap = q;
 end
 %% Vetor de saída
-if qp < 0
-%     fprintf('Ma: %g\n', Ma)
-%    fprintf('Mt: %g\n', Mt)
-    aaaa = 1;
-end
-momentos = [Ma Mt];
 reacoes = [R_n R_tdp R_tdn];
 Xp = [up 0 wp 0 qp 0 np 0 hp 0 tetap 0];
 end
