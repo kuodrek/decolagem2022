@@ -16,19 +16,19 @@ dt = U(1);
 de = U(2);
 
 V = sqrt(u^2 + w^2);
-%% Verificar fase de decolagem do avião
+%% Verificar fase de decolagem do avi?o
 alfa_max = 20 * pi / 180;
 gama_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
     gama = atan(w/u);
-    %% Restrição de gama máximo
+    %% Restri??o de gama m?ximo
     if gama > gama_max
         gama = gama_max;
     end
     if gama < -gama_max
         gama = -gama_max;
     end
-    %% Restrição de alfa máximo
+    %% Restri??o de alfa m?ximo
     alfa = teta - gama;
     if alfa > alfa_max
         alfa = alfa_max;
@@ -52,7 +52,7 @@ xcg = geral(1,10);
 zcg = geral(1,11);
 zh = geral(1,12);
 
-% Dados das Superfícies
+% Dados das Superf?cies
 superficies = AircraftData{3,1};
 Sw = superficies(1,1);
 CLaw = superficies(1,2);
@@ -77,7 +77,7 @@ Vh = superficies(2,8);
 arrasto = AircraftData{4,1};
 % Asa
 CDpw_c = [arrasto(1,1) arrasto(1,2)];
-CDiw_c = [superficies(2,1) superficies(2,2) superficies(2,3)];
+CDiw_c = [arrasto(2,1) arrasto(2,2) arrasto(2,3)];
 % EH
 CDph_c = [arrasto(3,1) arrasto(3,2)];
 CDih_c = [arrasto(4,1) arrasto(4,2) arrasto(4,3)];
@@ -99,7 +99,7 @@ Cmq = derivadas(3,2);
 CLde = derivadas(6,1);
 Cmde = derivadas(6,2);
 
-% Cálculo da pressão dinãmica
+% C?lculo da press?o din?mica
 Q = 0.5*rho*V^2;
 
 Ft = [T 0 0];
@@ -107,16 +107,31 @@ Mt = T*zp;
 Ht = [0 Mt 0];
 
 alfah = alfa*(1-depsilondalpha) - epsilon0 + ih;
-CDiw = CDiw_c(1)*(alfa+iw)^2 + CDiw_c(2)*(alfa+iw) + CDiw_c(3);
-CDpw = CDpw_c(1)*V + CDpw_c(2);
+% Cálculo dos arrastos induzidos
+CDiw = abs(CDiw_c(1)*(alfa+iw)^2 + CDiw_c(2)*(alfa+iw) + CDiw_c(3));
+CDih = abs(CDih_c(1)*alfah^2 + CDih_c(2)*alfah + CDih_c(3));
+% Cálculo dos arrastos parasitas
+if V < 5
+    CDpw = abs(CDpw_c(1)*5 + CDpw_c(2));
+    CDph = abs(CDph_c(1)*(5*nh) + CDph_c(2));
+    CDpv = abs(CDpv_c(1)*(5*nh) + CDpv_c(2));
+    CDpf = abs(CDpf_c(1)*5 + CDpf_c(2));
+elseif V > 12
+    CDpw = abs(CDpw_c(1)*12 + CDpw_c(2));
+    CDph = abs(CDph_c(1)*(12*nh) + CDph_c(2));
+    CDpv = abs(CDpv_c(1)*(12*nh) + CDpv_c(2));
+    CDpf = abs(CDpf_c(1)*12 + CDpf_c(2));
+else
+    CDpw = abs(CDpw_c(1)*V + CDpw_c(2));
+    CDph = abs(CDph_c(1)*(V*nh) + CDph_c(2));
+    CDpv = abs(CDpv_c(1)*(V*nh) + CDpv_c(2));
+    CDpf = abs(CDpf_c(1)*V + CDpf_c(2));
+end
+% Arrasto total
 CDw = CDiw + CDpw;
-CDih = CDih_c(1)*alfah^2 + CDih_c(2)*alfah + CDih_c(3);
-CDph = CDph_c(1)*(V*nh) + CDph_c(2);
 CDh = CDih + CDph;
-CDpv = CDpv_c(1)*(V*nh) + CDpv_c(2);
-CDpf = CDpf_c(1)*V + CDpf_c(2);
-CD = CDw + nh*Sh/Sw*CDh + CDpv + CDpf;
-% EQUAÇÃO DE FORÇA EM X
+CD = CDw + CDh*Sh/Sw*nh + CDpv + CDpf;
+% EQUA??O DE FOR?A EM X
 D = Q*Sref*CD;
 CL = CLaw*(alfa+iw) + CL0w + nh*Sh/Sw*(CLah*alfah + CL0h) + CLde*de;
 if V ~= 0

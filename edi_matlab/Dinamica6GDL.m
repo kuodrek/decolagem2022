@@ -20,30 +20,7 @@ q = X(5);
 phi = X(10);
 teta = X(11);
 psi = X(12);
-
-%% Vento no sistema NED (north, east, down)
-Nvento = H(1);
-Evento = H(2);
-Dvento = H(3);
-% Matriz de transformação do sistema terrestre móvel para o sistema do corpo (aula 4 de ec nos slides do ITA)
-Cbv = [cos(teta)*cos(psi),cos(teta)*sin(psi),-sin(teta);...
-    sin(phi)*cos(teta)*cos(psi)-cos(phi)*sin(psi),cos(phi)*cos(psi)+sin(phi)*sin(teta)*sin(psi),sin(phi)*cos(teta);...
-    cos(phi)*sin(teta)*cos(psi)+sin(phi)*sin(psi),-sin(phi)*cos(psi)+cos(phi)*sin(teta)*sin(psi),cos(phi)*cos(teta)];
-% Vento no sistema do corpo da aeronave (X, Y, Z)
-Bvento = Cbv*[Nvento;Evento;Dvento];
-uvento = Bvento(1);
-vvento = Bvento(2);
-wvento = Bvento(3);
-
-u = u + uvento;
-v = v + vvento;
-w = w + wvento;
-X(1) = u;
-X(2) = v;
-X(3) = w;
-
 %% Velocidades e ângulos de ataque / derrapagem
-beta = 0;
 alfa_max = 20 * pi / 180;
 gama_max = 20 * pi / 180;
 if strcmp(estado_do_aviao, 'subida')
@@ -71,7 +48,6 @@ end
 
 % Forças aerodinâmicas
 D = Fa(1);
-C = Fa(2);
 L = Fa(3);
 
 % Força tração
@@ -143,21 +119,7 @@ else
     z_pos_p = w;
     tetap = q;
 end
-
-%% Acelerações da dinamica normal
-% up = 1/m*(Xa+Xt) - w*q -g*sin(teta);
-% wp = 1/m*(Za+Zt) + u*q +g*cos(teta);
-% qp = 1/Iy*(Ma-Mt);
-% np = u*cos(teta)+w*sin(teta);
-% hp = u*sin(teta)-w*cos(teta);
-% tetap = q;
-
 %% Vetor de saída
-if qp < 0
-%     fprintf('Ma: %g\n', Ma)
-%    fprintf('Mt: %g\n', Mt)
-    aaaa = 1;
-end
 reacoes = [R_n R_tdp R_tdn];
 Xp = [up 0 wp 0 qp 0 x_pos_p 0 z_pos_p 0 tetap 0];
 end

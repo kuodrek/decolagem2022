@@ -39,7 +39,7 @@ iw = superficies(1,7);
 %% Solver numérico
 disp('INICIANDO SIMULAÇÃO')
 t_inicial = 0;
-t_final = 15;
+t_final = 25;
 h=20e-4;
 n_pto = (t_final-t_inicial)/h+1;
 vet_t=linspace(t_inicial,t_final,n_pto);   % Vetor dos tempos amostrados
@@ -55,12 +55,12 @@ check2 = 0;
 Sd = geral(1,16);
 %% Definição de valores limite
 % Velocidade de arfagem limite
-qmax = 10* pi / 180;
+qmax = 15* pi / 180;
 %% Variáveis de deflexão do profundor
 ac_eh = 30;
 de_takeoff = -10* pi / 180;
 x_inicial = ac_eh;
-x_final = ac_eh+5;
+x_final = ac_eh;
 %% Variáveis de decolagem ao liftoff (Avião sai do chão)
 x_liftoff = 0;
 V_liftoff = 0;
@@ -270,3 +270,10 @@ legend('alfa_{aeronave}','alfa_{asa}')
 title('alfa x X')
 xlim([0 max(x)])
 ylim([-30 30])
+
+subplot(2,3,6);
+q_0 = q(1)*ones(size(q,1),size(q,2));
+plot(vet_t,q);
+title('q x t')
+xlim([0 t_final])
+ylim([-40 40])
