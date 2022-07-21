@@ -68,7 +68,7 @@ for ii=1:size(de_vetor,1)
             %% Solver numérico
             t_inicial = 0;
             t_final = 20;
-            h=20e-3;
+            h=20e-4;
             n_pto = (t_final-t_inicial)/h+1;
             vet_t=linspace(t_inicial,t_final,n_pto);   % Vetor dos tempos amostrados
             U_vet=zeros(n_pto,4);
